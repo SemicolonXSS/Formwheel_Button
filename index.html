@@ -109,7 +109,7 @@ label{display:block;font-size:13px;font-weight:800;margin:0 0 7px}.field{margin-
 
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-import {getDatabase,ref,set,onValue,update,remove,onDisconnect,get} from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
+import {getDatabase,ref,set,onValue,update,remove,onDisconnect,get,runTransaction} from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
 import {getAuth,signInAnonymously,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
 
 const firebaseConfig={
@@ -136,7 +136,7 @@ function randomCode(){return String(Math.floor(1000+Math.random()*9000))}
 function roomRef(){return ref(db,`${root}/${room}`)}
 function nowSec(){return (performance.now()-roundStart)/1000}
 function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a}
-function shuffle(a){return a.sort(()=>Math.random()-.5)}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 
 signInAnonymously(auth).catch(e=>setStatus("Firebase 인증 실패: "+e.message));
 onAuthStateChanged(auth,u=>{
@@ -179,12 +179,15 @@ function watchLobby(){
   const ps=Object.entries(d.players||{});
   $("lobbyPlayers").innerHTML=ps.map(([id,p])=>`<div class="player">${id===d.host?"👑 ":""}${escapeHtml(p.name||"Player")}</div>`).join("");
   $("hostStart").classList.toggle("hidden",d.host!==uid);
-  if(d.status==="playing"&&round===0){show("game");round=0;score=0;startRoundLocal();}
+  if(d.status==="playing"&&Number(d.round)>round){
+   show("game");if(round===0)score=0;round=Number(d.round)-1;startRoundLocal();
+  }
+  if(d.status==="playing"&&host&&answered)nextMulti();
   if(d.status==="result")finishMulti(d.results||{});
  });
  onDisconnect(ref(db,`${root}/${room}/players/${uid}`)).remove();
 }
-window.hostStartGame=async()=>{await update(roomRef(),{status:"playing",round:0,startedAt:Date.now(),roundData:null});};
+window.hostStartGame=async()=>{await update(roomRef(),{status:"playing",round:1,startedAt:Date.now(),roundData:null,answers:null});};
 window.leaveRoom=async()=>{if(room&&uid)await remove(ref(db,`${root}/${room}/players/${uid}`));room="";show("home");history.replaceState({}, "", location.pathname)};
 window.copyRoomLink=async()=>{await navigator.clipboard.writeText(location.origin+location.pathname+"?room="+room);toast("방 주소를 복사했어요!")};
 
@@ -221,6 +224,7 @@ function makeRound(){
          spawnX:rand(5,70),spawnY:rand(5,70),secondX:rand(5,70),secondY:rand(5,70)};
 }
 function startRoundLocal(){
+ clearInterval(timerId);
  round++;
  if(round>totalRounds){finishSolo();return}
  answered=false;current=makeRound();roundStart=performance.now();
@@ -234,8 +238,9 @@ function startRoundLocal(){
  $("ruleText").textContent=current.text;
  $("gameHint").textContent=mode==="multi"?"모두 같은 라운드":"정확한 순간을 노리세요";
  $("chaosBtn").onclick=()=>answer(true);
+ $("chaosBtn").disabled=mode==="multi";
  if(mode==="multi") syncMultiRound();
- timerId=setInterval(tick,50);
+ else timerId=setInterval(tick,50);
 }
 function positionButton(useSecond=false){
  const b=$("chaosBtn"),z=$("buttonZone");
@@ -309,18 +314,21 @@ async function answer(pressed,timedOut=false){
  else setTimeout(()=>{lastRoundData={...current,pressed};startRoundLocal()},1100);
 }
 async function syncMultiRound(){
+ let appliedRound = null;
  if(gameUnsub)gameUnsub();
  gameUnsub=onValue(ref(db,`${root}/${room}/roundData`),snap=>{
-  const d=snap.val();if(!d||d.round!==round)return;
+  const d=snap.val();if(!d||d.round!==round||appliedRound===d.round)return;
+  appliedRound=d.round;
   const base=rules.find(x=>x.id===d.rule);if(!base)return;
-  current={...base,spawnX:d.spawnX,spawnY:d.spawnY,secondX:d.secondX,secondY:d.secondY};
+  current={...base,buttonText:base.kind==="dont"||base.id==="dontLate"||base.id==="dontMiddle"?"DON'T PRESS":"PRESS",spawnX:d.spawnX,spawnY:d.spawnY,secondX:d.secondX,secondY:d.secondY};
   $("ruleText").textContent=current.text;
   $("extraInfo").textContent="";
 
   if(!answered){
    roundStart=performance.now();
+   clearInterval(timerId);timerId=setInterval(tick,50);
    const btn=$("chaosBtn");
-   if(btn){btn.textContent="PRESS";btn.classList.remove("hidden");positionButton();}
+   if(btn){btn.disabled=false;btn.textContent=current.buttonText||"PRESS";btn.classList.remove("hidden");positionButton();}
   }
  });
  if(host){
@@ -334,22 +342,29 @@ async function submitMultiAnswer(pressed,t,correct=false,points=0){
  if(!room||!uid)return;
  await update(ref(db,`${root}/${room}/answers/${round}/${uid}`),{name:playerName,pressed,time:t,correct,points,at:Date.now()});
 }
+function calculateResults(players, answers){
+ const out={};
+ Object.entries(players||{}).forEach(([id,p])=>out[id]={name:p.name,score:0});
+ Object.entries(answers||{}).sort(([a],[b])=>Number(a)-Number(b)).forEach(([,rd])=>{
+  Object.entries(rd||{}).forEach(([id,a])=>{if(out[id])out[id].score=Math.max(0,out[id].score+(a.correct?Number(a.points)||0:-50));});
+ });
+ return out;
+}
 async function nextMulti(){
- const snap=await get(ref(db,`${root}/${room}/answers/${round}`));let count=Object.keys(snap.val()||{}).length;
- const ps=await get(ref(db,`${root}/${room}/players`));let total=Object.keys(ps.val()||{}).length;
- if(host&&count>=total){
-  if(round>=totalRounds){await update(roomRef(),{status:"result",results:await getResults()})}
-  else {round++;await update(roomRef(),{round,roundData:null,answers:null});}
- }
+ if(!host||!room)return;
+ const expectedRound=round;
+ try{await runTransaction(roomRef(),d=>{
+  if(!d||d.status!=="playing"||Number(d.round)!==expectedRound)return;
+  const ids=Object.keys(d.players||{}),answers=d.answers?.[expectedRound]||{};
+  if(!ids.length||!ids.every(id=>answers[id]))return;
+  if(expectedRound>=totalRounds){d.status="result";d.results=calculateResults(d.players,d.answers);}
+  else {d.round=expectedRound+1;d.roundData=null;}
+  return d;
+ },{applyLocally:false});}catch(e){toast("라운드 진행 실패: "+e.message);}
 }
 async function getResults(){
- const ps=(await get(ref(db,`${root}/${room}/players`))).val()||{};
- const ans=(await get(ref(db,`${root}/${room}/answers`))).val()||{};
- const out={};
- Object.entries(ps).forEach(([id,p])=>out[id]={name:p.name,score:p.score||0});
- // Score from answers; update players too.
- Object.values(ans).forEach(rd=>Object.entries(rd||{}).forEach(([id,a])=>{if(out[id])out[id].score=(out[id].score||0)+(a.points||0)+(a.correct?50:0)}));
- return out;
+ const d=(await get(roomRef())).val()||{};
+ return calculateResults(d.players,d.answers);
 }
 async function finishSolo(){
  show("result");$("resultSummary").textContent=`총 ${totalRounds}라운드 · 최종 ${score}점`;
@@ -366,3 +381,4 @@ window.addEventListener("beforeunload",()=>{if(room&&uid)remove(ref(db,`${root}/
 </script>
 </body>
 </html>
+
