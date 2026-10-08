@@ -1,6 +1,6 @@
 # Formwheel_Button
 
-Formwheel 프로젝트와 게임을 모아 실행하는 홈 화면.
+다양한 지시와 타이밍에 맞춰 버튼을 누르는 솔로·멀티 게임.
 
 - 실행: https://semicolonxss.github.io/Formwheel/button/
 - 프로젝트 목록: https://semicolonxss.github.io/Formwheel/
