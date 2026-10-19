@@ -88,19 +88,19 @@ const rules=[
  {id:"micro",text:"3.70초와 4.10초 사이의 단 0.40초 동안만 버튼을 누르세요.",kind:"press",min:3.70,max:4.10},
  {id:"micro2",text:"4.45초와 4.80초 사이의 단 0.35초 동안만 버튼을 누르세요.",kind:"press",min:4.45,max:4.80},
  {id:"last",text:"마지막 0.20초 안에서만 버튼을 누르세요.",kind:"press",min:4.80,max:5},
- {id:"wait",text:"처음 5초 동안은 절대로 누르지 말고, 그 이후에 누르세요.",kind:"press",min:3,max:5},
+ {id:"wait",text:"처음 3초 동안은 누르지 말고, 3초가 지난 뒤 누르세요.",kind:"press",min:3,max:5},
  {id:"exact",text:"가능한 한 정확하게 3.33초에 버튼을 누르세요.",kind:"press",min:3.23,max:3.43},
  {id:"dont",text:"이번 라운드에서는 버튼을 절대로 누르지 마세요.",kind:"dont"},
  {id:"dontLate",text:"마지막 1초에 버튼이 보여도 누르지 마세요. 끝까지 기다리세요.",kind:"dont"},
  {id:"dontMiddle",text:"타이머가 2초에서 4초 사이일 때 버튼을 누르지 마세요.",kind:"dont"},
- {id:"memoryPosition",text:"버튼의 위치를 기억하세요. 같은 위치에 다시 나타났을 때 누르세요.",kind:"memoryPosition"},
+ {id:"memoryPosition",text:"버튼이 잠시 이동했다가 원래 위치로 돌아오면 누르세요.",kind:"memoryPosition"},
  {id:"twoStep",text:"버튼이 처음 나타난 위치에서는 누르지 말고, 두 번째 위치에서만 누르세요.",kind:"twoStep",min:3,max:5},
  {id:"disappear",text:"버튼이 깜빡여도 바로 누르지 마세요. 마지막에 다시 나타났을 때 누르세요.",kind:"disappear",min:4,max:5},
  {id:"moving",text:"움직이는 버튼이 멈춘 뒤 정확히 0.50초 안에 누르세요.",kind:"moving",min:3.8,max:4.3},
  {id:"sequence",text:"버튼이 두 번 나타납니다. 첫 번째는 무시하고 두 번째만 누르세요.",kind:"sequence"},
  {id:"count",text:"버튼이 세 번째 위치로 이동한 뒤에만 누르세요.",kind:"count"},
- {id:"center",text:"버튼이 중앙 근처에 나타났을 때만 누르세요.",kind:"center"},
- {id:"edge",text:"버튼이 네모 영역의 가장자리 근처에 나타났을 때만 누르세요.",kind:"edge"},
+ {id:"center",text:"버튼이 중앙 근처에 있을 때 누르세요. 위치가 다르면 기다리세요.",kind:"center"},
+ {id:"edge",text:"버튼이 영역 가장자리 근처에 있을 때 누르세요. 아니라면 기다리세요.",kind:"edge"},
  {id:"delay",text:"버튼이 나타난 후 최소 2초가 지나야 누를 수 있습니다.",kind:"delay",min:2,max:5},
  {id:"randomWait",text:"버튼이 나타난 순간을 무시하고, 타이머가 4초를 넘긴 뒤 누르세요.",kind:"press",min:4,max:5},
  {id:"notHalf",text:"절반이 되자마자 누르지 마세요. 절반을 지난 뒤 1초 이상 기다리세요.",kind:"press",min:3.5,max:5},
@@ -149,9 +149,19 @@ function tick(){
  let elapsed=nowSec(),remain=Math.max(0,5-elapsed);
  $("timer").textContent=remain.toFixed(1);
  $("timer").className="timer "+(remain<=1?"danger":remain<=2.5?"warn":"");
- if(current?.kind==="moving"){
+ if(current?.kind==="moving" && elapsed<3.8){
    const phase=Math.floor(elapsed*2);
-   if(phase!==Math.floor(Math.max(0,elapsed-.05)*2))positionButton();
+   if(phase!==Math.floor(Math.max(0,elapsed-.05)*2)){
+     current.spawnX=rand(5,70);current.spawnY=rand(5,70);positionButton();
+   }
+ }
+ if(current?.kind==="memoryPosition"){
+   if(elapsed>=1.5&&!current._memoryMoved){
+     current._memoryMoved=true;positionButton(true);
+   }
+   if(elapsed>=3&&!current._secondMoved){
+     current._secondMoved=true;positionButton(false);
+   }
  }
  if(current?.kind==="twoStep"&&elapsed>=3.0&&!current._secondMoved){
    current._secondMoved=true;positionButton(true);
