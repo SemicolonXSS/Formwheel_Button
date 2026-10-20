@@ -21,8 +21,8 @@ const $=id=>document.getElementById(id);
 function show(id){document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));$(id).classList.add("active")}
 function toast(t){$("toast").textContent=t;$("toast").classList.add("show");setTimeout(()=>$("toast").classList.remove("show"),1800)}
 function setStatus(t,ok=false){$("setupStatus").textContent=t;$("setupStatus").className="status "+(ok?"ok":"")}
-function cleanName(){return ($("nickname").value||"Player").trim().slice(0,12)||"Player"}
-function randomCode(){return String(Math.floor(1000+Math.random()*9000))}
+function cleanName(){return String($("nickname").value||"Player").trim().replace(/\s+/g," ").slice(0,12)||"Player"}
+function randomCode(){return String(1000+crypto.getRandomValues(new Uint32Array(1))[0]%9000)}
 function roomRef(){return ref(db,`${root}/${room}`)}
 function nowSec(){return (performance.now()-roundStart)/1000}
 function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a}
