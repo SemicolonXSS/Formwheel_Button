@@ -278,7 +278,10 @@ async function getResults(){
  return calculateResults(d.players,d.answers);
 }
 async function finishSolo(){
- show("result");$("resultSummary").textContent=`총 ${totalRounds}라운드 · 최종 ${score}점`;
+ let oldBest=0;try{oldBest=Number(localStorage.getItem("formwheel_button_solo_best")||0)}catch{}
+ const newBest=score>oldBest;
+ if(newBest)try{localStorage.setItem("formwheel_button_solo_best",String(score))}catch{}
+ show("result");$("resultSummary").textContent=`총 ${totalRounds}라운드 · 최종 ${score}점 · 최고 ${Math.max(score,oldBest)}점${newBest?" 🏆 신기록!":""}`;
  $("resultList").innerHTML=`<div class="result-row"><b>🏆</b><b>${escapeHtml(playerName)}</b><strong>${score}점</strong></div>`;
 }
 function finishMulti(results){
