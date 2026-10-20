@@ -47,8 +47,19 @@ window.startSolo=()=>{playerName=cleanName();if(!playerName)return;mode="solo";r
 window.createRoom=async()=>{
  if(!uid){setStatus("Firebase 인증 중입니다. 잠시 후 다시 눌러주세요.");return}
  playerName=cleanName();if(!playerName){setStatus("닉네임을 입력해주세요.");return}
- room=randomCode();host=true;
- await set(roomRef(),{status:"lobby",host:uid,createdAt:Date.now(),players:{[uid]:{name:playerName,score:0,joinedAt:Date.now()}}});
+ host=true;
+ let created=false;
+ for(let attempt=0;attempt<8&&!created;attempt++){
+  room=randomCode();
+  try{
+   const result=await runTransaction(roomRef(),existing=>{
+    if(existing!==null)return;
+    return {status:"lobby",host:uid,createdAt:Date.now(),players:{[uid]:{name:playerName,score:0,joinedAt:Date.now()}}};
+   },{applyLocally:false});
+   created=result.committed;
+  }catch(e){setStatus("방 생성 실패: "+e.message);return;}
+ }
+ if(!created){setStatus("사용 가능한 방 코드를 찾지 못했습니다. 다시 시도해주세요.");return;}
  watchLobby();history.replaceState({}, "", location.pathname+"?room="+room);show("lobby");
 };
 window.joinRoom=async()=>{
