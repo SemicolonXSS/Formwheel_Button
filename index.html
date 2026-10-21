@@ -39,7 +39,7 @@
       <div class="actions"><button class="primary" onclick="createRoom()">방 만들기</button><button class="secondary" onclick="joinRoom()">코드로 참가</button></div>
       <p class="small">방을 만들면 /cord?room=1234 형태의 주소를 친구에게 공유할 수 있어요.</p>
     </div>
-    <div id="soloSetup">
+    <div id="soloSetup"><div class="field"><b>🎯 솔로 도전 모드</b><div class="actions"><button type="button" data-button-rounds="8" aria-pressed="false" onclick="setButtonRounds(8)">⚡ 8라운드</button><button type="button" data-button-rounds="12" aria-pressed="true" onclick="setButtonRounds(12)">🎯 12라운드</button><button type="button" data-button-rounds="20" aria-pressed="false" onclick="setButtonRounds(20)">🏆 20라운드</button></div></div>
       <div class="actions"><button class="primary" onclick="startSolo()">게임 시작</button></div>
     </div>
     <div id="setupStatus" class="status"></div>
@@ -76,13 +76,13 @@
 
 <section id="result" class="view">
   <div class="card center"><div style="font-size:54px">🏆</div><h1>CHAOS RESULT</h1><p id="resultSummary" class="sub"></p></div>
-  <div class="card"><h3>📊 결과</h3><div id="resultList" class="result-list"></div></div>
+  <div class="card"><h3>📊 결과</h3><div id="resultList" class="result-list"></div><p id="buttonAwards" role="status" style="line-height:1.9;margin-top:12px"></p></div>
   <div class="actions"><button class="primary" onclick="show('home')">처음으로</button><button class="secondary" onclick="restartSame()">다시 하기</button></div>
 </section>
 </main>
 <div id="toast" class="toast"></div>
 
-<script type="module" src="./assets/app.js?v=20261021-random5"></script>
+<script type="module" src="./assets/app.js?v=20261021-random7"></script>
 <script type="module" src="https://semicolonxss.github.io/Formwheel/assets/live-presence.js?v=20261017-duration"></script>
 </body>
 </html>
