@@ -14,6 +14,10 @@ const firebaseConfig={
 };
 const app=initializeApp(firebaseConfig),db=getDatabase(app),auth=getAuth(app);
 let uid=null,room="",mode="solo",host=false,playerName="",round=0,score=0,totalRounds=12;
+const buttonAwards=[["first","🎮 첫 완주"],["bronze","🥉 800점"],["silver","🥈 1300점"],["gold","🥇 1800점"]];
+function setButtonRounds(n){totalRounds=[8,12,20].includes(n)?n:12;document.querySelectorAll("[data-button-rounds]").forEach(b=>b.setAttribute("aria-pressed",String(Number(b.dataset.buttonRounds)===totalRounds)));}
+window.setButtonRounds=setButtonRounds;
+function buttonAwardUpdate(){let owned={};try{owned=JSON.parse(localStorage.getItem("fw_button_awards_v1")||"{}")}catch{};owned.first=true;if(score>=800)owned.bronze=true;if(score>=1300)owned.silver=true;if(score>=1800)owned.gold=true;try{localStorage.setItem("fw_button_awards_v1",JSON.stringify(owned))}catch{};const el=document.getElementById("buttonAwards");if(el)el.textContent=buttonAwards.map(([id,label])=>owned[id]?label+" ✅":label+" 🔒").join(" · ");}
 let timerId=null,roundStart=0,answered=false,current=null,roomUnsub=null,gameUnsub=null,lastRoundData=null;
 const root="buttonRooms";
 
@@ -278,6 +282,7 @@ async function getResults(){
  return calculateResults(d.players,d.answers);
 }
 async function finishSolo(){
+ buttonAwardUpdate();
  let oldBest=0;try{oldBest=Number(localStorage.getItem("formwheel_button_solo_best")||0)}catch{}
  const newBest=score>oldBest;
  if(newBest)try{localStorage.setItem("formwheel_button_solo_best",String(score))}catch{}
