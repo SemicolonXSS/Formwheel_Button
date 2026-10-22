@@ -27,6 +27,7 @@
     <div class="card mode-card"><h3>🎮 솔로</h3><p class="sub">혼자 12라운드. 기록과 정확도를 겨뤄보세요.</p><button type="button" class="primary" onclick="openSetup('solo')">솔로 시작</button></div>
     <div class="card mode-card"><h3>👥 같이</h3><p class="sub">방을 만들거나 코드를 입력해서 친구와 동시에 플레이.</p><button type="button" class="secondary" onclick="openSetup('multi')">같이 하기</button></div>
   </div>
+  <div class="card"><details><summary style="cursor:pointer;font-weight:800">📖 처음 하는 사람을 위한 플레이 팁</summary><p class="sub">매 라운드 화면의 지시를 먼저 읽으세요. ‘누르지 않기’ 라운드는 버튼을 누르지 않아야 하고, 타이밍 라운드는 남은 시간을 확인하세요.</p></details></div>
   <div class="card"><h3>💀 Chaos 규칙</h3><p class="sub">5초 타이머 · 절반 이하 타이밍 · 누르지 않기 · 마지막 1초 · 거짓말 지시 · 움직이는 버튼 · 기억하기 · 가짜 타이머 · 평균 타이밍 · 정확히 한 명만 누르기 등</p></div>
 </section>
 
@@ -37,7 +38,7 @@
     <div id="multiSetup" class="hidden">
       <div class="field"><label for="roomInput">방 코드</label><input id="roomInput" maxlength="4" inputmode="numeric" placeholder="4자리"></div>
       <div class="actions"><button class="primary" onclick="createRoom()">방 만들기</button><button class="secondary" onclick="joinRoom()">코드로 참가</button></div>
-      <p class="small">방을 만들면 /cord?room=1234 형태의 주소를 친구에게 공유할 수 있어요.</p>
+      <p class="small">방을 만든 뒤 대기실의 ‘🔗 주소 복사’ 버튼으로 친구를 초대할 수 있어요.</p>
     </div>
     <div id="soloSetup"><div class="field"><b>🎯 솔로 도전 모드</b><div class="actions"><button type="button" data-button-rounds="8" aria-pressed="false" onclick="setButtonRounds(8)">⚡ 8라운드</button><button type="button" data-button-rounds="12" aria-pressed="true" onclick="setButtonRounds(12)">🎯 12라운드</button><button type="button" data-button-rounds="20" aria-pressed="false" onclick="setButtonRounds(20)">🏆 20라운드</button></div></div>
       <div class="actions"><button class="primary" onclick="startSolo()">게임 시작</button></div>
